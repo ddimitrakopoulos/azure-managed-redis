@@ -2,8 +2,7 @@
 
 **Σκοπός:** πλήρης τεχνική αναφορά για μετάβαση Azure Cache for Redis Basic, Standard και Premium σε Azure Managed Redis (AMR).  
 **Περιοχή:** West Europe.  
-**Υλοποίηση από εμάς:** target AMR resources, data migration, Private Endpoint/VNet/DNS integration, τεχνικό cutover, validation και rollback.  
-**Εκτός scope:** προϋπολογισμός, notifications, καθημερινή λειτουργική διαχείριση και privileges.
+**Υλοποίηση από εμάς:** target AMR resources, data migration, Private Endpoint/VNet/DNS integration
 
 ## 1. Inventory
 
