@@ -82,19 +82,6 @@ flowchart LR
 | Production 1 | Hypercare 48-72 ώρες εντός SLO |
 | Production 2 | Επανάληψη αποδεδειγμένου runbook |
 
-## Cutover και rollback
-
-**Πριν από cutover:** AMR SKU/HA/policy/TLS, Private Endpoint/DNS, application config, data reconciliation και baseline metrics έχουν επικυρωθεί.
-
-**Κατά hypercare:** παρακολουθούμε error rate, P95/P99 latency, connections, throughput, used memory, evictions και business flows.
-
-**Rollback trigger:** sustained SLO breach, `MOVED`/`CROSSSLOT`, TLS/auth failure, data inconsistency ή cache-miss storm.
-
-1. Παγώνουμε νέο traffic προς AMR.
-2. Επιστρέφουμε feature flag/configuration στο legacy endpoint.
-3. Ελέγχουμε reconnect και κρίσιμα flows.
-4. Κάνουμε reconciliation για AMR-only writes πριν από νέο attempt.
-
 ## Πηγές
 
 - [Azure Managed Redis migration: understand](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-understand)
