@@ -7,11 +7,15 @@
 | Διαδρομή | Self-service migration σε πέντε waves |
 | Δικό μας scope | Provisioning AMR, data migration, Private Endpoint/VNet/DNS integration
 
+> **Σημείωση:** Το inventory περιλαμβάνει και τα 7 Redis caches που είναι γνωστά σήμερα. Η τελική επιλογή των caches για μετάβαση δεν έχει ακόμη καθοριστεί και μπορεί να περιλαμβάνει λιγότερα από 7 instances.
+
 ```mermaid
 flowchart LR
     A[Inventory και sizing] --> B[AMR provisioning]
     B --> C[Private Endpoint και DNS]
     C --> D[Data migration]
+    D --> E[Client: application configuration for new AMR endpoint]
+    E --> F[Client: deprovision old Redis cache after successful testing]
 ```
 
 ## Οι στόχοι μας
@@ -24,6 +28,13 @@ flowchart LR
 | 3 | `redis-cytaweb-qa`, `redis-cytaweb-qa-we-01` | Standard, 1 GB | Balanced B1, HA | AMR provisioning and data import |
 | 4 | `redis-cytaweb-premium-prod` | Premium, 6 GB | Balanced B5, HA | AMR provisioning and data import |
 | 5 | `redis-cytaweb-prod-we-01` | Premium, 6 GB | Balanced B5, HA | AMR provisioning and data import |
+
+### Επόμενα στάδια από τον πελάτη
+
+6. Ο πελάτης ενημερώνει το application configuration ώστε οι εφαρμογές να χρησιμοποιούν το νέο AMR endpoint.
+7. Μετά από επιτυχή testing του πελάτη, ο πελάτης κάνει deprovision το παλιό Redis cache.
+
+Τα στάδια 6 και 7 εκτελούνται από τον πελάτη και δεν περιλαμβάνονται στο δικό μας scope.
 
 Οι B1/B5 είναι οι προτεινόμενες αρχικές διαμορφώσεις των resources.
 

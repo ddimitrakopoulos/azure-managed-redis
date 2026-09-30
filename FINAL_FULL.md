@@ -16,9 +16,11 @@
 | `redis-cytaweb-test-standard-we-02` | West Europe | Running | 1 GB | Standard | Cyta Test Environment | [Portal](https://portal.azure.com#resource/subscriptions/bc72ff26-44bb-4263-8e1d-426c5c3d1eb3/resourceGroups/CytaWebSiteTest/providers/Microsoft.Cache/Redis/redis-cytaweb-test-standard-we-02) |
 | `redis-cytaweb-test-v6` | West Europe | Running | 1 GB | Standard | Cyta Test Environment | [Portal](https://portal.azure.com#resource/subscriptions/bc72ff26-44bb-4263-8e1d-426c5c3d1eb3/resourceGroups/CytaWebSiteTest/providers/Microsoft.Cache/Redis/redis-cytaweb-test-v6) |
 
+Το inventory περιλαμβάνει και τα 7 Redis caches που είναι γνωστά σήμερα. Η τελική επιλογή των caches για μετάβαση δεν έχει ακόμη καθοριστεί και μπορεί να περιλαμβάνει λιγότερα από 7 instances.
+
 ## 2. Provisioning waves
 
-Παρέχουμε νέο AMR ανά wave με τη σειρά Test → Dev → QA → πρώτο Production → δεύτερο Production.
+Οι παρακάτω waves δείχνουν την ενδεικτική σειρά για όσα caches επιλεγούν για μετάβαση: Test → Dev → QA → πρώτο Production → δεύτερο Production.
 
 | Wave | Caches | Initial AMR target | Σκοπός |
 | --- | --- | --- | --- |
@@ -27,6 +29,22 @@
 | 3 | Τα δύο QA | Balanced B1, HA | AMR provisioning και data import |
 | 4 | `redis-cytaweb-premium-prod` | Balanced B5, HA | AMR provisioning και data import |
 | 5 | `redis-cytaweb-prod-we-01` | Balanced B5, HA | AMR provisioning και data import |
+
+```mermaid
+flowchart LR
+    A[Inventory και sizing] --> B[AMR provisioning]
+    B --> C[Private Endpoint και DNS]
+    C --> D[Data import]
+    D --> E[Client: application configuration for new AMR endpoint]
+    E --> F[Client: deprovision old Redis cache after successful testing]
+```
+
+### Επόμενα στάδια από τον πελάτη
+
+6. Ο πελάτης ενημερώνει το application configuration ώστε οι εφαρμογές να χρησιμοποιούν το νέο AMR endpoint.
+7. Μετά από επιτυχή testing του πελάτη, ο πελάτης κάνει deprovision το παλιό Redis cache.
+
+Τα στάδια 6 και 7 εκτελούνται από τον πελάτη και δεν περιλαμβάνονται στο δικό μας scope.
 
 Τα B1/B5 είναι οι προτεινόμενες αρχικές διαμορφώσεις των resources.
 
