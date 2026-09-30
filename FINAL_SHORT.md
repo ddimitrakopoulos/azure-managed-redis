@@ -6,7 +6,6 @@
 | Περιοχή | West Europe |
 | Διαδρομή | Self-service migration σε πέντε waves |
 | Δικό μας scope | Provisioning AMR, data migration, Private Endpoint/VNet/DNS integration, cutover και validation |
-| Εκτός scope | Προϋπολογισμός, notifications, καθημερινή διαχείριση και privileges |
 
 > **Σύσταση:** δημιουργούμε, δικτυώνουμε και δοκιμάζουμε το νέο AMR πριν αλλάξει οποιοδήποτε production endpoint. Επιλέγουμε data strategy ανά workload και διατηρούμε το legacy cache ως rollback target.
 
