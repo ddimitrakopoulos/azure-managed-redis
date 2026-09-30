@@ -72,16 +72,6 @@ flowchart LR
 
 Το built-in migration tooling είναι preview και **δεν** μεταφέρει data. Δεν υποστηρίζει Private Endpoint, VNet injection ή geo-replication, και επηρεάζει όλους τους clients μαζί. Δεν είναι η βασική μας διαδρομή.
 
-## Gates ανά wave
-
-| Wave | Gate εξόδου |
-| --- | --- |
-| Test | Integration tests green, χωρίς `MOVED`/`CROSSSLOT` errors |
-| Dev | Repeatable provisioning και rollback rehearsal |
-| QA | Load test, HA reconnect, DNS και data reconciliation green |
-| Production 1 | Hypercare 48-72 ώρες εντός SLO |
-| Production 2 | Επανάληψη αποδεδειγμένου runbook |
-
 ## Πηγές
 
 - [Azure Managed Redis migration: understand](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-understand)
