@@ -14,9 +14,6 @@ flowchart LR
     A[Inventory και sizing] --> B[AMR provisioning]
     B --> C[Private Endpoint και DNS]
     C --> D[Data migration]
-    D --> E[App validation]
-    E --> F[Controlled cutover]
-    F --> G[Hypercare ή rollback]
 ```
 
 ## Οι στόχοι μας
