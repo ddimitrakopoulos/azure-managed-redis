@@ -215,38 +215,7 @@ TLS κρυπτογραφεί commands, values και credentials στη μετα
 
 Επομένως δεν το χρησιμοποιούμε ως βασική μέθοδο στα συγκεκριμένα instances, όπου η Private Endpoint integration είναι μέρος του scope.
 
-## 13. Validation, cutover και rollback
-
-### Προ-cutover checklist
-
-- [ ] Target SKU, HA, cluster policy, TLS mode, modules και persistence έχουν οριστεί.
-- [ ] Private Endpoint, private DNS και connectivity από κάθε runtime έχουν περάσει.
-- [ ] Application config για hostname/port/authentication είναι έτοιμο και reversible.
-- [ ] Data migration ολοκληρώθηκε και reconciliation είναι επιτυχές.
-- [ ] `MOVED`, `CROSSSLOT`, TLS/auth, logical DB και keyspace-notification impacts έχουν δοκιμαστεί.
-- [ ] Baseline P95/P99, errors, throughput, connections, memory και evictions καταγράφηκε.
-- [ ] Legacy endpoint και feature-flag/config rollback δοκιμάστηκαν.
-
-### Validation
-
-1. DNS/private endpoint connectivity από κάθε runtime.
-2. TLS/authentication και reconnect μετά από controlled restart.
-3. Functional smoke tests και κρίσιμα application flows.
-4. Key count, sampled values, TTL, session/queue invariants.
-5. P95/P99, errors, throughput, connections, used memory και evictions υπό representative load.
-6. Hypercare 48-72 ωρών για το πρώτο Production wave.
-
-### Rollback
-
-Ενεργοποιείται σε sustained SLO breach, `MOVED`/`CROSSSLOT`, TLS/auth failure, data inconsistency ή origin overload από cache misses.
-
-1. Παγώνουμε νέο traffic προς AMR.
-2. Επιστρέφουμε feature flag/configuration στο legacy endpoint.
-3. Ελέγχουμε reconnect και business flows.
-4. Κάνουμε reconciliation πριν από νέο migration attempt αν υπήρξαν AMR-only writes.
-5. Αναλύουμε metrics/logs και επαναλαμβάνουμε rehearsal μετά τη διόρθωση.
-
-## 14. Πηγές και επαλήθευση
+## 13. Πηγές και επαλήθευση
 
 - [Understand AMR differences and choose a SKU](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-understand)
 - [Migration options](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-options)
