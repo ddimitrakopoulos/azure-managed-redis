@@ -7,8 +7,6 @@
 | Διαδρομή | Self-service migration σε πέντε waves |
 | Δικό μας scope | Provisioning AMR, data migration, Private Endpoint/VNet/DNS integration
 
-> **Σύσταση:** δημιουργούμε, δικτυώνουμε και δοκιμάζουμε το νέο AMR πριν αλλάξει οποιοδήποτε production endpoint. Επιλέγουμε data strategy ανά workload και διατηρούμε το legacy cache ως rollback target.
-
 ```mermaid
 flowchart LR
     A[Inventory και sizing] --> B[AMR provisioning]
@@ -20,14 +18,14 @@ flowchart LR
 
 | Wave | Source cache | Current | Initial AMR candidate | Στρατηγική |
 | --- | --- | --- | --- | --- |
-| 1 | `redis-cytaweb-test-standard-we-02` | Standard, 1 GB | Balanced B1 | Cold start ή programmatic rehearsal |
-| 1 | `redis-cytaweb-test-v6` | Standard, 1 GB | Balanced B1 | Cold start ή programmatic rehearsal |
-| 2 | `redis-cytaweb-dev-we-01` | Standard, 1 GB | Balanced B1 | Cold start όπου είναι rehydratable |
-| 3 | `redis-cytaweb-qa`, `redis-cytaweb-qa-we-01` | Standard, 1 GB | Balanced B1, HA | Production-like rehearsal |
-| 4 | `redis-cytaweb-premium-prod` | Premium, 6 GB | Balanced B5, HA | RDB + freeze ή dual write |
-| 5 | `redis-cytaweb-prod-we-01` | Premium, 6 GB | Balanced B5, HA | RDB + freeze ή dual write |
+| 1 | `redis-cytaweb-test-standard-we-02` | Standard, 1 GB | Balanced B1 | AMR provisioning and data import |
+| 1 | `redis-cytaweb-test-v6` | Standard, 1 GB | Balanced B1 | AMR provisioning and data import |
+| 2 | `redis-cytaweb-dev-we-01` | Standard, 1 GB | Balanced B1 | AMR provisioning and data import |
+| 3 | `redis-cytaweb-qa`, `redis-cytaweb-qa-we-01` | Standard, 1 GB | Balanced B1, HA | AMR provisioning and data import |
+| 4 | `redis-cytaweb-premium-prod` | Premium, 6 GB | Balanced B5, HA | AMR provisioning and data import |
+| 5 | `redis-cytaweb-prod-we-01` | Premium, 6 GB | Balanced B5, HA | AMR provisioning and data import |
 
-Οι B1/B5 είναι αρχικές υποθέσεις. Επιβεβαιώνονται με 30 ημέρες μετρικών και load test.
+Οι B1/B5 είναι οι προτεινόμενες αρχικές διαμορφώσεις των resources.
 
 ## Οι κρίσιμες αλλαγές
 

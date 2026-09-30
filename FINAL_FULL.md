@@ -1,4 +1,4 @@
-# Azure Managed Redis - Πλήρης Τεχνική Αναφορά Μετάβασης
+# Azure Managed Redis - Πλήρης Τεχνική Αναφορά Provisioning
 
 **Σκοπός:** πλήρης τεχνική αναφορά για μετάβαση Azure Cache for Redis Basic, Standard και Premium σε Azure Managed Redis (AMR).  
 **Περιοχή:** West Europe.  
@@ -16,23 +16,23 @@
 | `redis-cytaweb-test-standard-we-02` | West Europe | Running | 1 GB | Standard | Cyta Test Environment | [Portal](https://portal.azure.com#resource/subscriptions/bc72ff26-44bb-4263-8e1d-426c5c3d1eb3/resourceGroups/CytaWebSiteTest/providers/Microsoft.Cache/Redis/redis-cytaweb-test-standard-we-02) |
 | `redis-cytaweb-test-v6` | West Europe | Running | 1 GB | Standard | Cyta Test Environment | [Portal](https://portal.azure.com#resource/subscriptions/bc72ff26-44bb-4263-8e1d-426c5c3d1eb3/resourceGroups/CytaWebSiteTest/providers/Microsoft.Cache/Redis/redis-cytaweb-test-v6) |
 
-## 2. Στρατηγική και waves
+## 2. Provisioning waves
 
-Επιλέγουμε **self-service migration**: νέο AMR, ανεξάρτητο network/data validation, ελεγχόμενο application switch και διατήρηση του source ως rollback target. Η σειρά είναι Test → Dev → QA → πρώτο Production → δεύτερο Production.
+Παρέχουμε νέο AMR ανά wave με τη σειρά Test → Dev → QA → πρώτο Production → δεύτερο Production.
 
 | Wave | Caches | Initial AMR target | Σκοπός |
 | --- | --- | --- | --- |
-| 1 | Τα δύο Test | Balanced B1 | Client, DNS, clustering και data-strategy rehearsal |
-| 2 | Dev | Balanced B1 | Repeatable provisioning και rollout pattern |
-| 3 | Τα δύο QA | Balanced B1, HA | Production-like load, HA και rollback validation |
-| 4 | `redis-cytaweb-premium-prod` | Balanced B5, HA | Πρώτο production cutover |
-| 5 | `redis-cytaweb-prod-we-01` | Balanced B5, HA | Επανάληψη αποδεδειγμένου runbook |
+| 1 | Τα δύο Test | Balanced B1 | AMR provisioning και data import |
+| 2 | Dev | Balanced B1 | AMR provisioning και data import |
+| 3 | Τα δύο QA | Balanced B1, HA | AMR provisioning και data import |
+| 4 | `redis-cytaweb-premium-prod` | Balanced B5, HA | AMR provisioning και data import |
+| 5 | `redis-cytaweb-prod-we-01` | Balanced B5, HA | AMR provisioning και data import |
 
-Τα B1/B5 είναι candidates. Επικυρώνονται με πραγματικά peak metrics και workload replay.
+Τα B1/B5 είναι οι προτεινόμενες αρχικές διαμορφώσεις των resources.
 
 ## 3. Γιατί AMR
 
-Το AMR χρησιμοποιεί Redis Enterprise αντί OSS Redis. Το Redis Enterprise εκτελεί πολλαπλά shards ανά node και αξιοποιεί περισσότερα vCPU για command processing. Αυτό επιτρέπει υψηλότερο potential throughput και καλύτερη latency, χωρίς να εγγυάται συγκεκριμένο multiplier. Το αποτέλεσμα επιβεβαιώνεται με P95/P99, throughput, CPU, bandwidth, connection και eviction measurements.
+Το AMR χρησιμοποιεί Redis Enterprise αντί OSS Redis. Το Redis Enterprise εκτελεί πολλαπλά shards ανά node και αξιοποιεί περισσότερα vCPU για command processing. Αυτό επιτρέπει υψηλότερο potential throughput και καλύτερη latency, χωρίς να εγγυάται συγκεκριμένο multiplier.
 
 Επιπλέον δυνατότητες: active geo-replication, persistence και import/export σε όλα τα AMR SKU, καθώς και Redis modules. Αυτές επιλέγονται βάσει ανάγκης και δεν είναι από μόνες τους λόγος για αλλαγή application architecture.
 
@@ -46,7 +46,7 @@
 
 $$\text{required AMR total memory} = \frac{\text{peak usable memory}}{0.80}$$
 
-Συλλέγουμε 30 ημέρες `Used Memory`, peak fragmentation, evictions, key count και TTL distribution. Συγκριτικά, το legacy ACR συχνά εκτιμάται με περίπου 10% reservation. Δεν επιλέγουμε target μόνο από 1 GB ή 6 GB nominal size. Για 10 GB usable demand χρειαζόμαστε τουλάχιστον 12.5 GB total AMR memory.
+Η επιλογή μεγέθους λαμβάνει υπόψη `Used Memory`, peak fragmentation, evictions, key count και TTL distribution. Συγκριτικά, το legacy ACR συχνά εκτιμάται με περίπου 10% reservation. Δεν επιλέγουμε target μόνο από 1 GB ή 6 GB nominal size. Για 10 GB usable demand απαιτούνται τουλάχιστον 12.5 GB total AMR memory.
 
 ### 4.2 Performance tier
 
@@ -106,19 +106,17 @@ flowchart LR
     E[On-premises DNS forwarder] --> B
 ```
 
-### Εκτέλεση
+### Provisioning
 
 1. Δημιουργούμε Private Endpoint για κάθε private target AMR.
 2. Συνδέουμε private DNS zone στα workload VNet.
-3. Ρυθμίζουμε/ελέγχουμε DNS forwarding για on-premises routes όπου απαιτείται.
-4. Ελέγχουμε resolution, TCP/TLS connectivity, NSG και routing από όλα τα runtime paths.
-5. Καταγράφουμε legacy/target endpoints για switch και rollback.
+3. Ρυθμίζουμε DNS forwarding για on-premises routes όπου απαιτείται.
 
 Το target hostname είναι `<name>.<region>.redis.azure.net`, αντί για `<name>.redis.cache.windows.net`.
 
 ## 8. TLS και authentication
 
-TLS κρυπτογραφεί commands, values και credentials στη μεταφορά και επαληθεύει τον server μέσω certificate.
+TLS κρυπτογραφεί commands, values και credentials στη μεταφορά και χρησιμοποιεί server certificate.
 
 | Ρύθμιση | Legacy cache | AMR |
 | --- | --- | --- |
