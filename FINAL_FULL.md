@@ -169,6 +169,22 @@ TLS κρυπτογραφεί commands, values και credentials στη μετα
 | Manual reboot | Δεν υποστηρίζεται· Flush μόνο για clearing target data |
 | Scheduled updates | Preview· όχι dependency του rollout |
 
+### 9.1 Redis 7.4 στο AMR σε σύγκριση με Redis 6.0
+
+Τα current caches χρησιμοποιούν Redis 6.0, ενώ το AMR χρησιμοποιεί Redis 7.4. Οι βασικές Redis data structures και τα συνήθη commands (`GET`, `SET`, hashes, lists, sets, sorted sets, TTL και Lua) παραμένουν συμβατά. Η μετάβαση δεν θεωρείται όμως in-place upgrade: κάθε εφαρμογή ελέγχεται στο νέο AMR endpoint πριν από το cutover.
+
+| Area | Redis 6.0 σήμερα | Redis 7.4 στο AMR | Επίπτωση για migration |
+| --- | --- | --- | --- |
+| Server-side logic | Lua μέσω `EVAL`/`EVALSHA` | Υποστηρίζει επιπλέον Redis Functions (`FUNCTION`, `FCALL`) | Τα υπάρχοντα Lua scripts δοκιμάζονται χωρίς αλλαγή. Functions είναι προαιρετική νέα δυνατότητα, όχι υποχρεωτική μετατροπή. |
+| Pub/Sub σε cluster | Κλασικό Pub/Sub | Περιλαμβάνει και sharded Pub/Sub commands, όπως `SSUBSCRIBE` | Δεν αλλάζουμε υπάρχον Pub/Sub χωρίς use case· ελέγχουμε ότι subscribers/reconnect logic συμπεριφέρεται σωστά μετά από failover. |
+| Hash fields | TTL μόνο στο επίπεδο ολόκληρου key | Προστίθενται commands για expiry σε hash fields, όπως `HEXPIRE` | Νέα δυνατότητα για μελλοντικό design· δεν αντικαθιστούμε αυτόματα υπάρχον key-level TTL model. |
+| ACLs και security commands | Βασικό ACL model | Πιο ώριμο ACL model και επιπλέον command coverage | Επιβεβαιώνουμε client authentication και least-privilege policies· δεν αντιγράφουμε credentials σε scripts ή Git. |
+| Command and script behavior | Legacy 6.0 runtime | Νεότερο runtime με bug fixes και behavior changes μεταξύ major/minor releases | Regression tests για scripts, error handling, reply parsing, expirations, transactions και pipelines. Δεν βασιζόμαστε σε undocumented behavior. |
+
+Οι παρακάτω περιορισμοί **δεν** είναι απλές διαφορές Redis 6.0 προς 7.4, αλλά AMR platform decisions και πρέπει να ελεγχθούν ανεξάρτητα: OSS/Enterprise clustering policy, database 0 μόνο, port 10000, Private Link/DNS, μη υποστήριξη keyspace notifications και επιλογή modules πριν από το create.
+
+Πριν από production cutover, τρέχουμε integration/regression suite στο target AMR με representative data και load. Συγκρίνουμε key count, sampled values, TTL distribution, command errors, p95/p99 latency, reconnect behavior και business invariants. Νέα Redis 7.4 commands ενεργοποιούνται μόνο μετά από application-level tests και operational runbook.
+
 Το AMR προσφέρει RedisJSON, RedisBloom, RedisTimeSeries και RediSearch. Modules επιλέγονται στην αρχική δημιουργία και δεν ενεργοποιούνται αργότερα. Δεν τα επιλέγουμε χωρίς business/technical use case.
 
 ## 10. Persistence και data classification
