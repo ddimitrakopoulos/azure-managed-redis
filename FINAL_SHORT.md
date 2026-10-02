@@ -1,90 +1,64 @@
-# Azure Managed Redis - Συνοπτικό Σχέδιο Μετάβασης
+# Πρόταση Μετάβασης σε Azure Managed Redis
 
-| Στοιχείο | Απόφαση |
-| --- | --- |
-| Στόχος | Μετάβαση 7 Azure Cache for Redis instances σε Azure Managed Redis (AMR) |
-| Περιοχή | West Europe |
-| Διαδρομή | Self-service migration σε πέντε waves |
-| Δικό μας scope | Provisioning AMR, data migration, Private Endpoint/VNet/DNS integration
+## Σκοπός
 
-> **Σημείωση:** Το inventory περιλαμβάνει και τα 7 Redis caches που είναι γνωστά σήμερα. Η τελική επιλογή των caches για μετάβαση δεν έχει ακόμη καθοριστεί και μπορεί να περιλαμβάνει λιγότερα από 7 instances.
+Προτείνουμε τη σταδιακή μετάβαση των υφιστάμενων Azure Cache for Redis instances σε Azure Managed Redis στη West Europe. Η μετάβαση θα ενισχύσει τη μακροχρόνια υποστήριξη, την ασφάλεια και την ανθεκτικότητα της Redis υπηρεσίας, με ελεγχόμενη μετάβαση των εφαρμογών και ελαχιστοποίηση επιχειρησιακού κινδύνου.
+
+Το αρχικό inventory περιλαμβάνει επτά caches. Η τελική λίστα και η σειρά μετάβασης θα επιβεβαιωθούν μαζί σας πριν ξεκινήσει η υλοποίηση.
+
+## Τι θα παραδώσουμε
+
+- Νέα Azure Managed Redis instances, διαστασιολογημένα σύμφωνα με τη χρήση κάθε workload.
+- Ιδιωτική και ασφαλή συνδεσιμότητα για τις εφαρμογές μέσω της υφιστάμενης δικτυακής αρχιτεκτονικής.
+- Υψηλή διαθεσιμότητα για τα QA και Production workloads.
+- Μεταφορά ή ελεγχόμενη επαναφόρτωση των δεδομένων, ανάλογα με τον ρόλο κάθε cache.
+- Έλεγχο συνδεσιμότητας, βασικών λειτουργιών και αποτελεσμάτων πριν από κάθε παραγωγική μετάβαση.
+- Τεκμηριωμένο σχέδιο cutover και rollback για κάθε cache.
+
+## Προτεινόμενη προσέγγιση
 
 ```mermaid
 flowchart LR
-    A[Inventory και sizing] --> B[AMR provisioning]
-    B --> C[Private Endpoint και DNS]
-    C --> D[Data migration]
-    D --> E[Client: application configuration for new AMR endpoint]
-    E --> F[Client: deprovision old Redis cache after successful testing]
+    A[Αξιολόγηση cache και εφαρμογών] --> B[Δημιουργία νέου Azure Managed Redis]
+    B --> C[Ασφαλής δικτυακή σύνδεση]
+    C --> D[Μεταφορά ή επαναφόρτωση δεδομένων]
+    D --> E[Έλεγχος και αποδοχή]
+    E --> F[Μετάβαση εφαρμογών]
+    F --> G[Παρακολούθηση και ολοκλήρωση]
 ```
 
-## Οι στόχοι μας
+Η υλοποίηση θα προχωρήσει σε κύματα, ξεκινώντας από Test και Development, ακολουθούμενα από QA και Production. Με αυτόν τον τρόπο επιβεβαιώνουμε τη διαδικασία και τις εφαρμογές σε περιβάλλοντα χαμηλότερου κινδύνου πριν από κάθε παραγωγική αλλαγή.
 
-| Wave | Source cache | Current | Initial AMR candidate | Στρατηγική |
-| --- | --- | --- | --- | --- |
-| 1 | `redis-cytaweb-test-standard-we-02` | Standard, 1 GB | Balanced B1 | AMR provisioning and data import |
-| 1 | `redis-cytaweb-test-v6` | Standard, 1 GB | Balanced B1 | AMR provisioning and data import |
-| 2 | `redis-cytaweb-dev-we-01` | Standard, 1 GB | Balanced B1 | AMR provisioning and data import |
-| 3 | `redis-cytaweb-qa`, `redis-cytaweb-qa-we-01` | Standard, 1 GB | Balanced B1, HA | AMR provisioning and data import |
-| 4 | `redis-cytaweb-premium-prod` | Premium, 6 GB | Balanced B5, HA | AMR provisioning and data import |
-| 5 | `redis-cytaweb-prod-we-01` | Premium, 6 GB | Balanced B5, HA | AMR provisioning and data import |
-
-### Επόμενα στάδια από τον πελάτη
-
-6. Ο πελάτης ενημερώνει το application configuration ώστε οι εφαρμογές να χρησιμοποιούν το νέο AMR endpoint.
-7. Μετά από επιτυχή testing του πελάτη, ο πελάτης κάνει deprovision το παλιό Redis cache.
-
-Τα στάδια 6 και 7 εκτελούνται από τον πελάτη και δεν περιλαμβάνονται στο δικό μας scope.
-
-Οι B1/B5 είναι οι προτεινόμενες αρχικές διαμορφώσεις των resources.
-
-## Οι κρίσιμες αλλαγές
-
-| Θέμα | Legacy cache | AMR | Ενέργεια |
-| --- | --- | --- | --- |
-| Runtime | OSS Redis | Redis Enterprise | Load test: περισσότερα shards/vCPU δεν σημαίνουν αυτόματα ίδιο workload behavior. |
-| Redis version | 6.x | 7.4 | Έλεγχος clients, Lua, multi-key commands και deprecated behavior. |
-| Clustering | Standard nonclustered, Premium optional | Clustered by default | Cluster-aware client, `MOVED` redirects και hash tags. |
-| Network | Private Link ή VNet injection | Private Link, όχι VNet injection/IP firewall | Νέο Private Endpoint και private DNS. |
-| Database | Πολλαπλά logical DB | Μόνο database 0 | `SELECT` αντικαθίσταται με key prefixes. |
-| TLS | Ports 6380/6379, ταυτόχρονα modes | Port 10000, ένα mode | TLS ως default· ενημέρωση όλων των connection strings. |
-| Events/reboot | Keyspace notifications, manual reboot | Δεν υπάρχουν | Application-level event replacement· Flush μόνο στο target. |
-
-## Αποφάσεις provisioning
-
-1. **Sizing:** το AMR κρατά περίπου 20% για system overhead.
-
-   $$\text{AMR total memory} \geq \frac{\text{peak usable memory}}{0.80}$$
-
-2. **Tier:** Balanced αρχικά, Memory Optimized όταν η μνήμη είναι bottleneck, Compute Optimized όταν CPU/bandwidth/latency είναι bottleneck.
-3. **HA:** ενεργό σε QA και Production. Non-HA μόνο για ανακτήσιμο Test/Dev.
-4. **Cluster policy:** OSS για καλύτερη throughput/latency, Enterprise μόνο για RediSearch ή legacy-client constraint. Nonclustered μόνο ως εξαίρεση έως 25 GB.
-5. **Authentication:** Entra ID/managed identity όπου υποστηρίζεται· access key μόνο μεταβατικά.
-6. **Modules/persistence:** αποφασίζονται πριν το create. Modules δεν προστίθενται αργότερα στο ίδιο instance.
-
-## Network και compatibility gates
-
-- Δημιουργούμε Private Endpoint και συνδέουμε private DNS zone στα VNet των workloads.
-- Δοκιμάζουμε name resolution και TCP/TLS connectivity από κάθε App Service, AKS, VM και on-premises route.
-- Ελέγχουμε `MOVED`, `CROSSSLOT`, reconnect, TLS/auth, `SELECT <db>`, Lua, pipelines, `MULTI/EXEC` και keyspace-event dependencies.
-- Για related multi-key data χρησιμοποιούμε hash tags: `{order:123}:header`, `{order:123}:items`.
-- AMR δεν υποστηρίζει keyspace notifications. Αντικαθιστούμε subscriptions σε `__keyspace@*__` και `__keyevent@*__`.
-
-## Επιλογή data migration
-
-| Workload | Μέθοδος | Κύριος κίνδυνος / έλεγχος |
+| Φάση | Περιβάλλον | Στόχος |
 | --- | --- | --- |
-| Cache-aside | Cold start και cache warming | Προστασία origin datastore από miss storm |
-| Premium, point-in-time data | RDB export/import | Writes μετά το snapshot χρειάζονται freeze ή dual write |
-| Sessions/queues/critical state | Dual write | Idempotency, conflict policy, reconciliation |
-| Ειδικό/μεγάλο dataset | Programmatic copy (RIOT-X) | Cluster-aware tool, TLS, VM ίδιας περιοχής |
+| 1 | Test | Επιβεβαίωση της διαδικασίας μετάβασης και της συμβατότητας εφαρμογών. |
+| 2 | Development | Εφαρμογή των επιβεβαιωμένων ρυθμίσεων σε περιβάλλον ανάπτυξης. |
+| 3 | QA | Ολοκληρωμένοι λειτουργικοί και επιχειρησιακοί έλεγχοι. |
+| 4-5 | Production | Ελεγχόμενο cutover ανά cache, με παρακολούθηση και δυνατότητα rollback. |
 
-Το built-in migration tooling είναι preview και **δεν** μεταφέρει data. Δεν υποστηρίζει Private Endpoint, VNet injection ή geo-replication, και επηρεάζει όλους τους clients μαζί. Δεν είναι η βασική μας διαδρομή.
+## Πώς διαχειριζόμαστε τον κίνδυνο
 
-## Πηγές
+- Κάθε cache αξιολογείται πριν από τη μετάβαση ως προς τη χρήση, τον όγκο δεδομένων και τις ανάγκες διαθεσιμότητας.
+- Για caches που μπορούν να αναδημιουργηθούν από το source system, επιλέγουμε ελεγχόμενη επαναφόρτωση. Για κρίσιμα δεδομένα εφαρμόζουμε κατάλληλη διαδικασία μεταφοράς και συμφωνίας αποτελεσμάτων.
+- Η αλλαγή των εφαρμογών γίνεται μόνο μετά από επιτυχή τεχνικό και λειτουργικό έλεγχο.
+- Διατηρούμε το υφιστάμενο cache διαθέσιμο για συμφωνημένο διάστημα rollback μετά από κάθε cutover.
+- Οι παραγωγικές αλλαγές προγραμματίζονται σε συμφωνημένο change window.
 
-- [Azure Managed Redis migration: understand](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-understand)
-- [Migration options](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-options)
-- [Self-service migration](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-self-service)
-- [Migration tooling preview](https://learn.microsoft.com/en-us/azure/redis/migrate/migrate-basic-standard-premium-with-tooling)
-- [AMR architecture](https://learn.microsoft.com/en-us/azure/redis/architecture)
+## Ρόλοι και ευθύνες
+
+| Δική μας ευθύνη | Δική σας ευθύνη |
+| --- | --- |
+| Provisioning των νέων Azure Managed Redis resources και ασφαλούς συνδεσιμότητας. | Επιβεβαίωση της τελικής λίστας caches και των επιχειρησιακών προτεραιοτήτων. |
+| Σχεδιασμός και εκτέλεση της διαδικασίας μεταφοράς δεδομένων. | Παροχή application owners και συμμετοχή στους λειτουργικούς ελέγχους. |
+| Τεχνικοί έλεγχοι, παρακολούθηση cutover και τεκμηρίωση rollback. | Ενημέρωση των application configurations προς το νέο endpoint. |
+| Παράδοση τεκμηρίωσης για κάθε ολοκληρωμένο cache. | Τελική αποδοχή και deprovisioning του παλιού cache μετά την επιτυχή μετάβαση. |
+
+## Κριτήρια επιτυχίας
+
+Μια μετάβαση θεωρείται ολοκληρωμένη όταν οι εφαρμογές συνδέονται επιτυχώς στο νέο service, οι συμφωνημένοι λειτουργικοί έλεγχοι έχουν περάσει, τα δεδομένα έχουν επαληθευτεί όπου απαιτείται και η περίοδος παρακολούθησης έχει ολοκληρωθεί χωρίς ουσιώδη προβλήματα.
+
+## Επόμενα βήματα
+
+1. Επιβεβαίωση των caches που θα μεταφερθούν και της επιχειρησιακής προτεραιότητάς τους.
+2. Ορισμός application owners, change windows και κριτηρίων αποδοχής.
+3. Έναρξη του πρώτου Test migration wave και αξιολόγηση αποτελεσμάτων πριν από το επόμενο κύμα.
