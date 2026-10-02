@@ -1,6 +1,6 @@
 # redis-cytaweb-test-standard-we-02
 
-Σημαντικές επιλογές όπως ορίζονται στο `main(6).bicep`.
+Σημαντικές επιλογές όπως ορίζονται στο `redis-cytaweb-test-standard-we-02.bicep`.
 
 | Επιλογή | Τιμή |
 | --- | --- |

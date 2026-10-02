@@ -1,6 +1,6 @@
 # redis-cytaweb-premium-prod
 
-Σημαντικές επιλογές όπως ορίζονται στο `main(2).bicep`.
+Σημαντικές επιλογές όπως ορίζονται στο `redis-cytaweb-premium-prod.bicep`.
 
 | Επιλογή | Τιμή |
 | --- | --- |
