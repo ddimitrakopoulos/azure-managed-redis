@@ -110,6 +110,16 @@ $$\text{required AMR total memory} = \frac{\text{peak usable memory}}{0.80}$$
 | Enterprise clustering | RediSearch ή legacy client compatibility | Single proxy endpoint, αλλά πιθανό compute/network bottleneck. |
 | Nonclustered | Μόνο όταν η εφαρμογή δεν ανέχεται cluster topology | Έως 25 GB και χαμηλότερη performance. |
 
+### 6.1 Πώς λειτουργεί κάθε clustering policy
+
+| Policy | Routing και data distribution | Συμπεριφορά εφαρμογής | Πότε επιλέγεται |
+| --- | --- | --- | --- |
+| OSS clustering | Τα keys κατανέμονται σε hash slots και shards. Ο client λαμβάνει cluster topology και ακολουθεί τις απαντήσεις `MOVED` προς το shard που κατέχει το key. | Απαιτεί Redis Cluster-aware client. Multi-key commands, transactions και Lua scripts λειτουργούν μόνο όταν όλα τα keys είναι στο ίδιο slot. | Default επιλογή για νέο workload που υποστηρίζει Redis Cluster και χρειάζεται την καλύτερη throughput/latency συμπεριφορά. |
+| Enterprise clustering | Redis Enterprise proxy δέχεται το connection και δρομολογεί εσωτερικά τα requests στα shards, χωρίς να εκθέτει `MOVED` redirects στον client. | Απλοποιεί legacy-client compatibility και υποστηρίζει RediSearch. Το proxy μπορεί να γίνει compute/network bottleneck σε υψηλό throughput. | Όταν απαιτείται RediSearch ή ο client δεν μπορεί να υποστηρίξει OSS Cluster protocol. |
+| Nonclustered | Ένα nonclustered logical database χωρίς cluster slot routing. Δεν αξιοποιεί sharding για parallel command processing. | Δεν απαιτεί Cluster API ή `MOVED` handling. Δεν υπάρχει cross-slot restriction, αλλά η κλιμάκωση και το performance envelope είναι μικρότερα. | Μόνο ως compatibility exception όταν η εφαρμογή δεν μπορεί να προσαρμοστεί σε clustered topology. Μέγιστο μέγεθος 25 GB. |
+
+Η clustering policy είναι create-time επιλογή. Η αλλαγή από OSS σε Enterprise ή Nonclustered, ή το αντίστροφο, απαιτεί νέο AMR resource και migration/cutover. Δεν την επιλέγουμε μόνο για να αποφύγουμε ένα client test: για τα συγκεκριμένα caches η αρχική επιλογή είναι OSS clustering, εκτός αν ο compatibility assessment τεκμηριώσει εξαίρεση.
+
 Για OSS policy, multi-key commands, Lua και `MULTI/EXEC` πρέπει να έχουν keys στο ίδιο hash slot. Χρησιμοποιούμε hash tags όπως `{customer:42}:profile` και `{customer:42}:orders`. Στο Enterprise policy cross-slot επιτρέπονται μόνο `DEL`, `MSET`, `MGET`, `EXISTS`, `UNLINK` και `TOUCH`.
 
 ## 7. Network integration
